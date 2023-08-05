@@ -1,0 +1,1 @@
+cmd /k "cd /d E:\OneDrive\rclone&&rclone authorize "onedrive"

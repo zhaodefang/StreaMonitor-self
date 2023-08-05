@@ -1,0 +1,1 @@
+使用python自带的idle，打开get_video_thumb.py，然后run
