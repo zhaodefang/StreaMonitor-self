@@ -40,7 +40,9 @@ The application has the following interfaces:
 * External console via ZeroMQ (sort of working)
 * Web interface (only status)
 
-### 前置条件
+### Linux前置条件
+
+#### （未成功部署，使用docker吧）
 
 - 打开终端并以 root 用户身份登录。
 

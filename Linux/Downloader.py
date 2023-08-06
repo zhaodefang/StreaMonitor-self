@@ -29,7 +29,7 @@ def main():
     oos_detector = OOSDetector(streamers)
     oos_detector.start()
 
-    if is_docker():
+    if not is_docker():
         console_manager = CLIManager(streamers)
         console_manager.start()
 
