@@ -4,12 +4,6 @@ from streamonitor.bot import Bot
 import streamonitor.log as log
 from streamonitor.manager import Manager
 
-site_counts = {
-    "StripChat": 0,
-    "Chaturbate": 0,
-    "其他站点": 0
-}
-
 
 class HTTPManager(Manager):
     def __init__(self, streamers):
@@ -152,15 +146,6 @@ class HTTPManager(Manager):
 
         @app.route('/')
         def status():
-
-            for streamer in self.streamers:
-                if streamer.site == "StripChat":
-                    site_counts["StripChat"] += 1
-                elif streamer.site == "Chaturbate":
-                    site_counts["Chaturbate"] += 1
-                else:
-                    site_counts["其他站点"] += 1
-
             output = """
             <html>
             <head>
@@ -175,7 +160,7 @@ class HTTPManager(Manager):
                 <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="搜索用户名">
             </div>
 
-            <div>站点数量统计：&nbsp;&nbsp;&nbsp; StripChat: {sc_count} &nbsp;&nbsp;&nbsp; Chaturbate: {cb_count} &nbsp;&nbsp;&nbsp; 其他: {other_count}</div>
+            <div>站点数量统计：&nbsp;&nbsp;&nbsp; StripChat: <span id="sc_count"></span> &nbsp;&nbsp;&nbsp; Chaturbate: <span id="cb_count"></span> </div>
 
             <br>
             <div class="table-container">
@@ -186,8 +171,7 @@ class HTTPManager(Manager):
             <th onclick="sortTable(2)"> Started </th>
             <th onclick="sortTable(3)"> TO SEE </th>
             <th onclick="sortTable(4)"> Status </th>
-            </tr>""".format(sc_count=site_counts["StripChat"], cb_count=site_counts["Chaturbate"],
-                            other_count=site_counts["其他站点"])
+            </tr>"""
 
             for streamer in self.streamers:
                 if streamer.status() == "Channel online":
@@ -214,7 +198,32 @@ class HTTPManager(Manager):
                     <td>{st}</td>
                     </tr>""".format(s=streamer.site, r=streamer.running,
                                     st=streamer.status(), u=streamer.username, stream_url=stream_url)
-            output += "</table></div></div></body></html>"
+            output += "</table></div></div>"
+            output += """
+            <script>
+            // 获取包含站点名称的所有 <td> 元素
+            var tdElements = document.getElementsByTagName('td');
+
+            // 初始化计数器
+            var scCount = 0;
+            var cbCount = 0;
+
+            // 遍历 <td> 元素并计算出现的次数
+            for (var i = 0; i < tdElements.length; i++) {
+                var tdText = tdElements[i].textContent;
+                if (tdText === 'StripChat') {
+                    scCount++;
+                } else if (tdText === 'Chaturbate') {
+                    cbCount++;
+                }
+            }
+
+            // 更新计数到对应的 <span> 元素
+            document.getElementById('sc_count').textContent = scCount;
+            document.getElementById('cb_count').textContent = cbCount;
+            </script>
+            """
+            output += "</body></html>"
             return output
 
         @app.route('/recordings')

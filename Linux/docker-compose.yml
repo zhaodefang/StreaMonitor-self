@@ -2,11 +2,14 @@ version: "3.7"
 
 services:
   streamonitor:
+    container_name: streamonitor
     build: ./
     image: streamonitor:latest
     volumes:
-      - ./downloads:/app/downloads
+      - /768/downloads:/app/downloads
       - ./config.json:/app/config.json
       - ./parameters.py:/app/parameters.py
+      - ./streamonitor:/app/streamonitor
     ports:
       - '6969:6969'
+      - '5000:5000'

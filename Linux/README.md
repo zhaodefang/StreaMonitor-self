@@ -40,9 +40,85 @@ The application has the following interfaces:
 * External console via ZeroMQ (sort of working)
 * Web interface (only status)
 
+### 前置条件
+
+- 打开终端并以 root 用户身份登录。
+
+- 使用以下命令安装 EPEL 存储库（如果尚未安装）：
+
+  ```bash
+  yum install epel-release
+  ```
+
+- 运行以下命令来安装 tmux、screen、rclone：
+
+  ```bash
+  yum install tmux screen && curl -k https://rclone.org/install.sh | sudo bash
+  ```
+
+- 安装完成后，您可以通过运行以下命令来验证 tmux 是否成功安装：
+
+  ```bash
+  tmux -V
+  ```
+
+  如果成功安装，将显示 tmux 的版本信息。
+
+- 安装python
+
+  ```
+  3.10.12
+  ```
+
+- pip包
+
+  ```
+  pip3 install -r requirements.txt
+  ```
+
+- 安装ffmpeg，先下载源码包：
+
+  ```bash
+  git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg
+  ```
+
+  然后进入ffmpeg文件夹，依次执行下列语句，当然连起来也可以：
+
+  ```bash
+  cd ffmpeg && ./configure
+  make
+  make install
+  ```
+
+  时间较长，不出意外会正常安装好。
+
+  但是因为configure时候没有指定路径，所以直接ffmpeg会提示找不到。
+
+  所以要将编译好的ffmpeg复制到bin目录即可：
+
+  ```bash
+  cp ffmpeg /usr/bin/ffmpeg
+  ```
+
+  然后检查版本。
+
+  ```bash
+  ffmpeg -version
+  ```
+
+- 使用run.sh
+
+  ```
+  bash run.sh
+  ```
+
+  
+
 #### Starting and console
+
 Start the downloader (it does not fork yet)\
 Automatically imports all streamers from the config file.
+
 ```
 python Downloader.py
 ```
@@ -105,3 +181,46 @@ Most (if not every) streamers disallow recording their shows. Please respect the
 If you don't, and you record them despite this request, please don't ever publish or share any recordings. \
 If you either record or share the recorded shows, you might be legally punished. \
 Also, please don't use this tool for monetization in any way.
+
+
+
+## 常见错误
+
+### 找不到或者版本过旧的 nasm/yasm
+
+```
+[root@localhost ~]# cd ffmpeg && ./configure
+nasm/yasm not found or too old. Use --disable-x86asm for a crippled build.
+
+If you think configure made a mistake, make sure you are using the latest
+version from Git.  If the latest version fails, report the problem to the
+ffmpeg-user@ffmpeg.org mailing list or IRC #ffmpeg on irc.libera.chat.
+Include the log file "ffbuild/config.log" produced by configure as this will help
+solve the problem.
+
+```
+
+要解决这个问题，您可以尝试以下几个步骤：
+
+1. 检查 nasm 或 yasm 是否已经安装在您的系统上。您可以运行以下命令来检查它们的安装情况：
+
+   ```bash
+   nasm -v
+   yasm --version
+   ```
+
+   如果它们已经安装，您将看到相应的版本信息。如果它们未安装，您可以使用包管理器（如apt、yum等）来安装它们。
+
+   ```bash
+   sudo yum install nasm yasm
+   ```
+
+2. 如果您已经安装了 nasm 或 yasm，但仍然遇到问题，可能是因为版本过旧。您可以尝试升级 nasm 或 yasm 到最新版本。具体的升级方法取决于您的操作系统和包管理器。
+
+3. 如果您无法安装或升级 nasm/yasm，您可以尝试使用 `--disable-x86asm` 参数来禁用 x86 汇编优化。这将导致编译过程中缺少一些优化功能，但可以让您继续进行编译。您可以运行以下命令来执行配置并禁用 x86 汇编优化：
+
+   ```bash
+   ./configure --disable-x86asm
+   ```
+
+   请注意，禁用 x86 汇编优化可能会影响 FFmpeg 的性能。
