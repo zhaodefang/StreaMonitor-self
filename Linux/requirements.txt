@@ -1,3 +1,4 @@
+setuptools
 requests
 terminaltables
 pyzmq
@@ -7,3 +8,4 @@ beautifulsoup4
 websocket-client
 ffmpy
 m3u8
+opencv-python

@@ -16,7 +16,7 @@ import numpy as np
 # from PIL import Image, ImageDraw, ImageFont
 
 localpath = os.path.split(os.path.abspath(__file__))[0]                     # 当前位置
-logname = 'get_video_pic_log.json'                                          # 日志文件
+logname = 'log-get_video_pic_log.json'                                          # 日志文件
 logpath = os.path.join(localpath,'log')                                     # 日志位置
 now = time.strftime('%Y-%m-%d_%H-%M-%S',time.localtime(time.time()))        # 当前时间
 
@@ -28,8 +28,8 @@ def start(path):
             if get_pic(path,f):                 # 截取截图，如已存在截图则跳过
                 save_log('"' + os.path.join(path,f) + '", "跳过"\n')
         except:
-            save_log('\n【----Error----】,' + os.path.join(path,f) + '\n')
-            print ('\n【Error File】',os.path.join(path,f))
+            save_log('\n[----Error----],' + os.path.join(path,f) + '\n')
+            print ('\n[Error File]',os.path.join(path,f).encode('utf-8'))
     if len(path_list):                          # 如本级有目录则循环递归调用
         for p in path_list:
             start(p)
@@ -40,7 +40,7 @@ def get_pic(path, file):
     nfile = os.path.splitext(file)[0]           # 视频文件名
     pfile = os.path.join(path,file)             # 视频路径+文件名
     path_pic = os.path.join(path,nfile + '_pics')   # 截图存放路径
-    temp_pic = os.path.join(path_pic,'【0000】.jpg')    # 临时文件
+    temp_pic = os.path.join(path_pic,'[0000].jpg')    # 临时文件
     if not os.path.exists(path_pic):            # pics文件夹检测
         os.makedirs(path_pic)
     if (os.path.exists(temp_pic)): return True  # 已存在临时文件
@@ -61,7 +61,7 @@ def get_pic(path, file):
         name_t = str(datetime.timedelta(seconds=((i + 1) * jg))).replace(":","-")
         name_t = '0' + name_t if len(name_t) == 7 else name_t   # 文件名时间
         # tmp_name = 'temp__' + str(i) + '.jpg'           # 临时文件名
-        file_name = '【' + '{:0>4d}'.format(i+1) + '】' + name_t + '.jpg'   # 截图文件名
+        file_name = '[' + '{:0>4d}'.format(i+1) + ']' + name_t + '.jpg'   # 截图文件名
         path_file = os.path.join(path_pic,file_name)    # 截图路径加文件名
         # path_tmp = os.path.join(localpath,tmp_name)     # 截图路径加临时文件名
         time_fps = int(((i + 1)* jg * fps) // 1)        # 时间帧数
@@ -76,8 +76,8 @@ def get_pic(path, file):
             up_or_down = round(fps)     # 前进
         while not ret:                  # 截图出错回退or前进指定帧
             if loop_num > (jg * 2):     # 回退or前进超过2个间隔退出
-                save_log('\n【----Error----】,' + os.path.join(path,file) + '\n')
-                print ('\n【Error File】',os.path.join(path,file))
+                save_log('\n[----Error----],' + os.path.join(path,file) + '\n')
+                print ('\n[Error File]',os.path.join(path,file))
                 return True
             time_fps += up_or_down
             save_log('[' + str(int(time_fps)) + ']')
@@ -170,11 +170,11 @@ if __name__ == '__main__':
     
     if not os.path.exists(logpath):
         os.makedirs(logpath)
-    rootpath = './' + folder_name
+    rootpath = folder_name
     if sys.argv[2] == 1:
         dwidth = int(input('截图宽度：') or 0)
         rotate = int(input('是否逆时针旋转截图（输入度数）：') or 0)
-        print('默认间隔2分钟以下：2s，10分钟：5s，30分钟：15s，1小时：30s，其他：60s【输入数字修改，回车跳过】')
+        print('默认间隔2分钟以下：2s，10分钟：5s，30分钟：15s，1小时：30s，其他：60s[输入数字修改，回车跳过]')
         s2 = int(input('2分钟内间隔：') or 2)
         s10 = int(input('10分钟内间隔：') or 5)
         s30 = int(input('30分钟内间隔：') or 15)
