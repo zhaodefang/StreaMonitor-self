@@ -3,10 +3,20 @@ import time
 import logging
 import shutil
 import sys
+import datetime
+
+
+# 操作日志
+logtime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")             # 脚本操作日志时间戳
+logLifecycleLog = "log-RunOperation.log"                                    # 脚本的生命周期日志
+
+localpath = os.path.split(os.path.abspath(__file__))[0]                     # 获取当前文件的绝对路径，并使用os.path.split()函数将其分割为目录和文件名，[0]表示取目录部分
+logpath = os.path.join(localpath, 'log')                                    # 使用os.path.join()函数将当前路径和子目录名 'log' 连接起来，形成完整的日志路径
 
 # 设置日志文件名和格式
-log_filename = 'log-check_0000jpg.txt'
+log_filename = os.path.join(logpath, 'log-check_0000jpg.log')  # 使用os.path.join()函数将日志路径和日志文件名连接起来，形成完整的日志文件路径
 logging.basicConfig(filename=log_filename, level=logging.INFO, format='%(message)s')
+
 
 # 搜索指定目录下的文件夹
 def search_folders(directory):
@@ -22,7 +32,7 @@ def check_files(folder_path):
     if len(files) == 1 and files[0] == '[0000].jpg':
         folder_size = get_folder_size(folder_path)
         formatted_size = format_size(folder_size)
-        log_entry = f"Empty folder name with the suffix '_pics': {folder_path}, Time: {time.strftime('%Y-%m-%d %H:%M:%S')}, folder size: {formatted_size}"
+        log_entry = f"Time: {time.strftime('%Y-%m-%d %H:%M:%S')}, Empty folder name with the suffix '_pics': {folder_path},  folder size: {formatted_size}"
         print(log_entry)
         logging.info(log_entry)
         if folder_size > 20 * 1024:
@@ -65,7 +75,11 @@ def format_size(size):
 
 # 调用入口函数
 if __name__ == '__main__':
-
+    
+    # 将操作日志消息追加到操作日志文件
+    with open(os.path.join(logpath,logLifecycleLog),'a+',encoding='utf-8') as file:
+        file.write(f"{logtime} ---- 脚本操作：开始运行----check_0000jpg.py 清理空略缩图文件夹\n")
+    
     if len(sys.argv) < 2:
         print("Please provide a folder name as a parameter")
         sys.exit(1)
@@ -73,3 +87,7 @@ if __name__ == '__main__':
 
     # 执行搜索
     search_folders(directory)
+    
+    # 将操作日志消息追加到操作日志文件
+    with open(os.path.join(logpath,logLifecycleLog),'a+',encoding='utf-8') as file:
+        file.write(f"{logtime} ---- 脚本操作：运行结束----check_0000jpg.py 清理空略缩图文件夹\n")
