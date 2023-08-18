@@ -19,7 +19,7 @@ show_menu() {
 	echo "请选择一个选项:"
 	echo ""
 	# Docker操作
-	echo "1. Docker-运行钩子"
+	echo "1. Docker-钩子失效"
 	echo "2. Docker-暂停容器"
 	echo "3. Docker-删除容器"
 
@@ -285,8 +285,8 @@ show_menu() {
 			# 执行Downloads-同步文件夹的命令
 			echo "执行Downloads-同步文件夹的命令"
 			# 询问 Rclone 远程配置名称
-			read -p "请输入 Rclone 远程配置名称（默认为 scsg）: " rclone_remote_name
-			rclone_remote_name=${rclone_remote_name:-scsg}  # 如果用户没有输入，则使用默认值 scsg
+			read -p "请输入 Rclone 远程配置名称（默认为 scsg2）: " rclone_remote_name
+			rclone_remote_name=${rclone_remote_name:-scsg2}  # 如果用户没有输入，则使用默认值 scsg2
 
 			# 询问 Rclone 同步线程数
 			read -p "请输入 Rclone 同步线程数（默认为 10）: " rclone_thread_count
@@ -326,8 +326,8 @@ show_menu() {
 			# 执行Sync-同步文件夹的命令
 			echo "执行Sync-同步文件夹的命令"
 			# 询问 Rclone 远程配置名称
-			read -p "请输入 Rclone 远程配置名称（默认为 scsg）: " rclone_remote_name
-			rclone_remote_name=${rclone_remote_name:-scsg}  # 如果用户没有输入，则使用默认值 scsg
+			read -p "请输入 Rclone 远程配置名称（默认为 scsg2）: " rclone_remote_name
+			rclone_remote_name=${rclone_remote_name:-scsg2}  # 如果用户没有输入，则使用默认值 scsg2
 
 			# 询问 Rclone 同步线程数
 			read -p "请输入 Rclone 同步线程数（默认为 10）: " rclone_thread_count

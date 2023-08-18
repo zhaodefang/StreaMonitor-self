@@ -12,103 +12,184 @@ import os
 import re
 import cv2
 import datetime
+from datetime import timedelta
 import numpy as np
+
 # from PIL import Image, ImageDraw, ImageFont
 
-localpath = os.path.split(os.path.abspath(__file__))[0]                            # 当前位置
-logname = 'log-get_video_pic_log.json'                                             # 具体的脚本运行日志文件
-logpath = os.path.join(localpath,'log')                                            # 日志位置
-now = time.strftime('%Y-%m-%d_%H-%M-%S',time.localtime(time.time()))        # 脚本运行日志时间戳
+localpath = os.path.split(os.path.abspath(__file__))[0]                                     # 当前位置
+logname = 'log-get_video_pic_log.json'                                                      # 具体的脚本运行日志文件
+logpath = os.path.join(localpath, 'log')  # 日志位置
+now = time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime(time.time()))                # 脚本运行日志时间戳
 
-logtime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")                    # 脚本操作日志时间戳
-logLifecycleLog = "log-RunOperation.log"                                           #脚本的生命周期日志
-
+logtime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")                             # 脚本操作日志时间戳
+logLifecycleLog = "log-RunOperation.log"                                                    # 脚本的生命周期日志
+index_count = 0 # 已处理的视频数量
+total_processing_time = 0  # 总处理时间
 
 # 主控制
-def start(path):
-    file_list,path_list = get_list(path)        # 获取文件、目录列表
-    count_file_list = str(len(file_list))       # 文件总数
-    init_count = 0                              # 当前执行的文件索引数
-    for f in file_list:                         # 循环文件列表
-        init_count += 1
+def thumb_start(path, count_f_l):
+    file_list, path_list = get_list(path)                                                   # 获取文件、目录列表
+
+    global index_count, total_processing_time  # 声明使用全局变量
+    for f in file_list:
+        start = time.time()  # 记录当前视频开始处理的时间
+        # 循环文件列表
+        index_count += 1                                                                      # 当前执行的文件索引数
         try:
-            if get_pic(path, f, init_count, count_file_list):                 # 截取截图，如已存在截图则跳过
-                save_log('['+ str(init_count) + '/' + count_file_list + ']："' + os.path.join(path,f) + '", "跳过"\n\n')
+
+            if get_pic(path, f, count_f_l, start):                                      # 截取截图，如已存在截图则跳过
+
+                end = time.time()  # 记录当前视频处理完成的时间
+                processing_time = end - start  # 当前视频的处理时间
+                total_processing_time += processing_time
+                # 计算平均处理时间
+                average_processing_time = total_processing_time / index_count
+                # 计算预估剩余时间
+                remaining_videos = count_f_l - index_count
+                estimated_remaining_time = average_processing_time * remaining_videos
+                # 格式化时间为时:分:秒的形式
+                # processing_time_formatted = str(timedelta(seconds=processing_time))
+                # average_processing_time_formatted = str(timedelta(seconds=average_processing_time))
+                estimated_remaining_time_formatted = str(timedelta(seconds=estimated_remaining_time))
+
+                save_log(
+                    '[' + str(index_count) + '/' + str(count_f_l) + ']："' + os.path.join(path, f) + '", "跳过, 预估剩余时间:' + estimated_remaining_time_formatted +'秒\n\n')
         except:
-            save_log('['+ str(init_count) + '/' + count_file_list + ']：' + '\n[----Error----],' + os.path.join(path,f) + '\n\n')
-            print ('\n[Error File]',os.path.join(path,f).encode('utf-8'))
-    if len(path_list):                          # 如本级有目录则循环递归调用
+            end = time.time()  # 记录当前视频处理完成的时间
+            processing_time = end - start  # 当前视频的处理时间
+            total_processing_time += processing_time
+            # 计算平均处理时间
+            average_processing_time = total_processing_time / index_count
+            # 计算预估剩余时间
+            remaining_videos = count_f_l - index_count
+            estimated_remaining_time = average_processing_time * remaining_videos
+            # 格式化时间为时:分:秒的形式
+            # processing_time_formatted = str(timedelta(seconds=processing_time))
+            # average_processing_time_formatted = str(timedelta(seconds=average_processing_time))
+            estimated_remaining_time_formatted = str(timedelta(seconds=estimated_remaining_time))
+
+            save_log('[' + str(index_count) + '/' + str(count_f_l) + ']：' + '\n[----Error----],' + os.path.join(path,
+                                                                                                                f) + ', 预估剩余时间:' + estimated_remaining_time_formatted +'秒\n\n')
+            print('[' + str(index_count) + '/' + str(count_f_l) + ']：' + '\n[Error File]',
+                  os.path.join(path, f).encode('utf-8'))
+    if len(path_list):                                                                      # 如本级有目录则循环递归调用
         for p in path_list:
-            start(p)
+            thumb_start(p, count_f_l)
+
+
+# 遍历文件夹内视频文件计数
+def count_video_files(path):
+    count = 0
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if file.endswith(('.mp4', '.avi', '.mkv', '.mov')):
+                count += 1
+    return count
+
+
+# 获取时长时间戳
+def get_video_duration(cap):
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))  # 获取视频的总帧数
+    fps = cap.get(cv2.CAP_PROP_FPS)                                                         # 获取视频的帧率
+
+    duration = frame_count / fps                                                            # 计算视频的时长（以秒为单位）
+
+    # 将时长转换为时间戳形式
+    minutes = int(duration / 60)
+    seconds = int(duration % 60)
+    milliseconds = int((duration % 1) * 1000)
+
+    return f"{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
+
 
 # 获取视频截图并保存
-def get_pic(path, file, init_count, count_file_list):
+def get_pic(path, file, count_file_list, start):
+    global index_count, total_processing_time  # 声明使用全局变量
     # 视频基础数据获取
-    nfile = os.path.splitext(file)[0]                             # 视频文件名
-    pfile = os.path.join(path,file)                               # 视频路径+文件名
-    path_pic = os.path.join(path,nfile + '_pics')                 # 截图存放路径
-    temp_pic = os.path.join(path_pic,'[0000].jpg')                # 临时文件
-    if not os.path.exists(path_pic):                              # pics文件夹检测
+    nfile = os.path.splitext(file)[0]                                                       # 视频文件名
+    pfile = os.path.join(path, file)                                                        # 视频路径+文件名
+    path_pic = os.path.join(path, nfile + '_pics')                                          # 截图存放路径
+    temp_pic = os.path.join(path_pic, '[0000].jpg')                                         # 临时文件
+    if not os.path.exists(path_pic):                                                        # pics文件夹检测
         os.makedirs(path_pic)
-    if (os.path.exists(temp_pic)): return True                    # 已存在临时文件
-    with open (temp_pic,'w') as f: pass                           # 创建临时文件
-    cap = cv2.VideoCapture(pfile)                                 # 读取视频文件
-    frames, fps, durations, tim, width, height = get_info(cap)    # 获取视频信息
-    num, jg = get_row(durations)                                  # 获取截图数量、时间间隔
-    if frames == 0: return False                                  # 帧数为零，返回True
-    if (durations < 5): return False                              # 时间过短，返回True
-    #save_log('"' + os.path.join(path,file) + '",' + str(frames) + ',' + str(fps) + ',' + str(durations) + ',"' + tim + '",' + str(num))
-    save_log('['+ str(init_count) + '/' + count_file_list + ']："' + os.path.join(path,file) + '",' + ', FPS：' + str(fps) + ', 时长：' + str(durations) + '"\n' )
+    if (os.path.exists(temp_pic)): return True                                              # 已存在临时文件
+    with open(temp_pic, 'w') as f:
+        pass                                                                                # 创建临时文件
+    cap = cv2.VideoCapture(pfile)                                                           # 读取视频文件
+    frames, fps, durations, tim, width, height = get_info(cap)                              # 获取视频信息
+    num, jg = get_row(durations)                                                            # 获取截图数量、时间间隔
+    if frames == 0: return False                                                            # 帧数为零，返回True
+    if (durations < 5): return False                                                        # 时间过短，返回True
+    video_duration = get_video_duration(cap)                                                # 获取视频时长
+    # print("视频时长:", duration)
+    # save_log('"' + os.path.join(path,file) + '",' + str(frames) + ',' + str(fps) + ',' + str(durations) + ',"' + tim + '",' + str(num))
+    save_log('[' + str(index_count) + '/' + str(count_file_list) + ']："' + os.path.join(path, file) + '",' + ', FPS：' + str(
+        fps) + ', 时长：' + str(video_duration) + '"')
 
     chk = 2
-    print(nfile + '\n[',end="")
+    print(nfile + '\n[', end="")
     for i in range(num):
         loop_num = 0
         if i and i % 500 == 0:
             save_log('\n')
-        name_t = str(datetime.timedelta(seconds=((i + 1) * jg))).replace(":","-")
-        name_t = '0' + name_t if len(name_t) == 7 else name_t             # 文件名时间
-        # tmp_name = 'temp__' + str(i) + '.jpg'                           # 临时文件名
-        file_name = '[' + '{:0>4d}'.format(i+1) + ']' + name_t + '.jpg'   # 截图文件名
-        path_file = os.path.join(path_pic,file_name)                      # 截图路径加文件名
-        # path_tmp = os.path.join(localpath,tmp_name)                     # 截图路径加临时文件名
-        time_fps = int(((i + 1)* jg * fps) // 1)                          # 时间帧数
-        if os.path.exists(path_file):                                     # 截图存在跳过
-            save_log(',跳' + str(i+1))
+        name_t = str(datetime.timedelta(seconds=((i + 1) * jg))).replace(":", "-")
+        name_t = '0' + name_t if len(name_t) == 7 else name_t  # 文件名时间
+        # tmp_name = 'temp__' + str(i) + '.jpg'                                             # 临时文件名
+        file_name = '[' + '{:0>4d}'.format(i + 1) + ']' + name_t + '.jpg'                   # 截图文件名
+        path_file = os.path.join(path_pic, file_name)                                       # 截图路径加文件名
+        # path_tmp = os.path.join(localpath,tmp_name)                                       # 截图路径加临时文件名
+        time_fps = int(((i + 1) * jg * fps) // 1)                                           # 时间帧数
+        if os.path.exists(path_file):                                                       # 截图存在跳过
+            save_log(',跳' + str(i + 1))
             continue
-        cap.set(cv2.CAP_PROP_POS_FRAMES, time_fps)      # 设置截取帧数
-        ret, frame = cap.read()                         # 读取帧
-        if (time_fps / frames) > 0.5:                   # 设定回退or前进固定帧
-            up_or_down = -round(fps)                    # 回退
+        cap.set(cv2.CAP_PROP_POS_FRAMES, time_fps)                                          # 设置截取帧数
+        ret, frame = cap.read()                                                             # 读取帧
+        if (time_fps / frames) > 0.5:                                                       # 设定回退or前进固定帧
+            up_or_down = -round(fps)                                                        # 回退
         else:
-            up_or_down = round(fps)                     # 前进
-        while not ret:                                  # 截图出错回退or前进指定帧
-            if loop_num > (jg * 2):                     # 回退or前进超过2个间隔退出
-                save_log('\n[----Error----],' + os.path.join(path,file) + '\n')
-                print ('\n[Error File]',os.path.join(path,file))
+            up_or_down = round(fps)                                                         # 前进
+        while not ret:                                                                      # 截图出错回退or前进指定帧
+            if loop_num > (jg * 2):                                                         # 回退or前进超过2个间隔退出
+                save_log('\n[----Error----],' + os.path.join(path, file) + '\n')
+                print('\n[Error File]', os.path.join(path, file))
                 return True
             time_fps += up_or_down
             save_log('[' + str(int(time_fps)) + ']')
-            print('.',end="")
+            print('.', end="")
             cap.set(cv2.CAP_PROP_POS_FRAMES, time_fps)
             ret, frame = cap.read()
             loop_num += 1
-        if dwidth: 
-            dheight = int(((dwidth/width)*height)//1)
-            frame = cv2.resize(frame,(dwidth,dheight))                # 调整长宽
-        if rotate: 
-            frame = rotate_bound(frame, rotate)                             # 旋转检测
-        cv2.imencode('.jpg',frame)[1].tofile(path_file)                 # 保存截图
-        # cv2.imwrite(path_tmp,frame)                                       # 保存截图
-        # if os.path.exists(path_tmp): shutil.move(path_tmp,path_file)      # 替换文件名并移动
-        save_log(',' + str(i+1))
-        if (((i + 1)/num)*100 > chk):                                       # 进度条模块
-            sn = int((((i + 1)/num)*100 - chk) / 2)
+        if dwidth:
+            dheight = int(((dwidth / width) * height) // 1)
+            frame = cv2.resize(frame, (dwidth, dheight))                            # 调整长宽
+        if rotate:
+            frame = rotate_bound(frame, rotate)                                           # 旋转检测
+        cv2.imencode('.jpg', frame)[1].tofile(path_file)  # 保存截图
+        # cv2.imwrite(path_tmp,frame)                                                     # 保存截图
+        # if os.path.exists(path_tmp): shutil.move(path_tmp,path_file)                    # 替换文件名并移动
+        # save_log(',' + str(i+1))                                                        # 保存略缩图生成的数量到日志
+        if (((i + 1) / num) * 100 > chk):                                                 # 进度条模块
+            sn = int((((i + 1) / num) * 100 - chk) / 2)
             for x in range(sn):
-                print('■',end="")
+                print('■', end="")
             chk += 2 * sn
-    save_log(',Done\n')
-    print ('] Done~')
+    end = time.time()  # 记录当前视频处理完成的时间
+    processing_time = end - start  # 当前视频的处理时间
+    total_processing_time += processing_time
+    # 计算平均处理时间
+    average_processing_time = total_processing_time / index_count
+    # 计算预估剩余时间
+    remaining_videos = count_file_list - index_count
+    estimated_remaining_time = average_processing_time * remaining_videos
+    # 格式化时间为时:分:秒的形式
+    #processing_time_formatted = str(timedelta(seconds=processing_time))
+    #average_processing_time_formatted = str(timedelta(seconds=average_processing_time))
+    estimated_remaining_time_formatted = str(timedelta(seconds=estimated_remaining_time))
+
+    save_log(',Done, 预估剩余时间:' + estimated_remaining_time_formatted +'\n')
+    print('] Done~')
+
 
 # 获取指定类型文件和文件夹列表
 def get_list(path):
@@ -117,29 +198,31 @@ def get_list(path):
     rule = r"\.(avi|wmv|wmp|wm|asf|mpg|mpeg|mpe|m1v|m2v|mpv2|mp2v|ts|tp|tpr|trp|vob|ogm|ogv|mp4|m4v|m4p|m4b|3gp|3gpp|3g2|3gp2|mkv|rm|ram|rmvb|rpm|flv|swf|mov|qt|nsv|dpg|m2ts|m2t|mts|dvr-ms|k3g|skm|evo|nsr|amv|divx|webm|wtv|f4v|mxf)$"
     lists = os.listdir(path)
     for p in lists:
-        if re.search("\$RECYCLE\.BIN|System Volume Information|Recovery",p): continue   # 排除windows系统文件夹
-        if os.path.isdir(os.path.join(path,p)):
-            path_list.append(os.path.join(path,p))      # 追加文件夹
+        if re.search("\$RECYCLE\.BIN|System Volume Information|Recovery", p): continue  # 排除windows系统文件夹
+        if os.path.isdir(os.path.join(path, p)):
+            path_list.append(os.path.join(path, p))  # 追加文件夹
             continue
         if re.search(rule, p, re.IGNORECASE):
-            file_list.append(p)                         # 追加文件
+            file_list.append(p)  # 追加文件
     return (file_list, path_list)
+
 
 # 获取视频基本信息
 def get_info(cap):
-    frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))     # 总帧数
-    fps = round(cap.get(cv2.CAP_PROP_FPS), 4)           # 帧率
-    durations = int(frames / fps)                       # 时间
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))      # 宽度
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))    # 高度
-    tim = str(datetime.timedelta(seconds=durations))    # 格式化时间
-    tim = '0' + tim if len(tim) == 7  else tim          # 格式化时间前补零
+    frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))                 # 总帧数
+    fps = round(cap.get(cv2.CAP_PROP_FPS), 4)                       # 帧率
+    durations = int(frames / fps)  # 时间
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))                  # 宽度
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))                # 高度
+    tim = str(datetime.timedelta(seconds=durations))                # 格式化时间
+    tim = '0' + tim if len(tim) == 7 else tim                       # 格式化时间前补零
     return (frames, fps, durations, tim, width, height)
+
 
 # OpenCV旋转图片
 def rotate_bound(image, angle):
-    (h, w) = image.shape[:2]        # 获取图片长宽
-    (cX, cY) = (w // 2, h // 2)     # 设置旋转中心坐标
+    (h, w) = image.shape[:2]                                        # 获取图片长宽
+    (cX, cY) = (w // 2, h // 2)                                     # 设置旋转中心坐标
     M = cv2.getRotationMatrix2D((cX, cY), -angle, 1.0)  # 设置M矩阵
     cos = np.abs(M[0, 0])
     sin = np.abs(M[0, 1])
@@ -149,60 +232,80 @@ def rotate_bound(image, angle):
     M[1, 2] += (nH / 2) - cY
     return cv2.warpAffine(image, M, (nW, nH))
 
+
 # 设定并返回图片个数、间隔
 def get_row(sec):
-    jg, num = (0,0)
-    if (sec <= 121): jg = s2            # 2分钟内间隔
-    elif (sec <= 601): jg = s10         # 10分钟内间隔
-    elif (sec <= 1801): jg = s30        # 30分钟内间隔
-    elif (sec <= 3601): jg = s60        # 60分钟内间隔
-    else : jg = sot                     # 大于60分钟间隔
-    num = sec//jg
+    jg, num = (0, 0)
+    if (sec <= 121):
+        jg = s2  # 2分钟内间隔
+    elif (sec <= 601):
+        jg = s10  # 10分钟内间隔
+    elif (sec <= 1801):
+        jg = s30  # 30分钟内间隔
+    elif (sec <= 3601):
+        jg = s60  # 60分钟内间隔
+    else:
+        jg = sot  # 大于60分钟间隔
+    num = sec // jg
     return (num, jg)
+
 
 # 保存日志
 def save_log(mess):
-    with open (os.path.join(logpath,logname),'a+',encoding='utf-8') as f:
+    with open(os.path.join(logpath, logname), 'a+', encoding='utf-8') as f:
         f.write(mess)
 
+
 if __name__ == '__main__':
-    
+
     # 将操作日志消息追加到操作日志文件
     if not os.path.exists(logpath):
         os.makedirs(logpath)
-    with open(os.path.join(logpath,logLifecycleLog),'a+',encoding='utf-8') as file:
+    with open(os.path.join(logpath, logLifecycleLog), 'a+', encoding='utf-8') as file:
         file.write(f"{logtime} ---- 脚本操作：开始运行----get_video_thumb_pic.py 生成略缩图\n")
-    
-    #运行命令：python get_video_thumb_pic.py sync 0
-    #sync：文件夹名
-    #0：不改变默认参数   1：改变默认参数
+
+    # 运行命令：python get_video_thumb_pic.py sync 0
+    # sync：文件夹名
+    # 0：不改变默认参数   1：改变默认参数
     # 检查是否提供了足够的参数
     if len(sys.argv) < 3:
         print("请提供文件夹名作为参数")
         sys.exit(1)
     folder_name = sys.argv[1]
-    
+
     rootpath = folder_name
     if sys.argv[2] == 1:
         dwidth = int(input('截图宽度：') or 0)
         rotate = int(input('是否逆时针旋转截图（输入度数）：') or 0)
-        print('默认间隔2分钟以下：2s，10分钟：5s，30分钟：15s，1小时：30s，其他：60s[输入数字修改，回车跳过]')
+        print('默认间隔2分钟以下：2s，10分钟：5s，30分钟：15s，1小时：30s，其他：45s[输入数字修改，回车跳过]')
         s2 = int(input('2分钟内间隔：') or 2)
         s10 = int(input('10分钟内间隔：') or 5)
         s30 = int(input('30分钟内间隔：') or 15)
         s60 = int(input('60分钟内间隔：') or 30)
-        sot = int(input('大于60分钟间隔：') or 60)
+        sot = int(input('大于60分钟间隔：') or 45)
     else:
-        #dwidth, rotate, s2, s10, s30, s60, s90, s120, s180, s60, s300 = (0, 0, 5, 20, 40, 90, 120, 240, 300, 480, 600)
-        dwidth, rotate, s2, s10, s30, s60, sot = (0, 0, 2, 5, 15, 30, 60)
+        # dwidth, rotate, s2, s10, s30, s60, s90, s120, s180, s60, s300 = (0, 0, 5, 20, 40, 90, 120, 240, 300, 480, 600)
+        dwidth, rotate, s2, s10, s30, s60, sot = (0, 0, 2, 5, 15, 30, 45)
     # print('[■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■] 进度条')
     # stime = time.time()
-    save_log('\t' + '===========================================' + '     ' + now + '     ' + rootpath + '     ' + '===========================================' + '\n')
-    start(rootpath)
+    save_log(
+        '\t' + '===========================================' + '     ' + now + '     ' + rootpath + '     ' + '===========================================' + '\n')
+
+    count_file_list = count_video_files(rootpath)  # 视频文件总数
+
+    start_time = time.time()  # 记录开始时间
+    thumb_start(rootpath, count_file_list) # 开始脚本
+
+    end_time = time.time()  # 记录结束时间
+    total_time = end_time - start_time  # 总耗时
+
+    print(f"所有视频处理完成，耗时 {total_time} 秒")
+
     # etime = time.time()
     # print(etime - stime)
     # save_log(str((etime - stime)) + '\n')
-    
+    save_log(
+        '\t' + '===========================================' + '     ' + '运行结束' + '===========================================' + '\n')
     # 将操作日志消息追加到操作日志文件
-    with open(os.path.join(logpath,logLifecycleLog),'a+',encoding='utf-8') as file:
-        file.write(f"{logtime} ---- 脚本操作：运行结束----get_video_thumb_pic.py 生成略缩图\n")
+    with open(os.path.join(logpath, logLifecycleLog), 'a+', encoding='utf-8') as file:
+        file.write(f"{logtime} ---- 脚本操作：运行结束----get_video_thumb_pic.py 生成略缩图----耗时 {total_time} 秒\n")
