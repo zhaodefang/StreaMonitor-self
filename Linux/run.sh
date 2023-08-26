@@ -62,7 +62,9 @@ show_menu() {
 	echo ""
 	echo "25. Clear-Downloads-删除空白略缩图"
 	echo "26. Clear-Sync-删除空白略缩图"
-
+	echo ""
+	echo "27. Query-Size-查询文件夹大小"
+    echo ""
 	echo "0. 退出脚本"
 	echo ""
 
@@ -398,6 +400,11 @@ show_menu() {
 			# 执行Clear-Sync-删除空白略缩图的命令
 			screen -dmS Clear-Sync python3 $MainFolder/check_0000jpg.py $SyncFolder
 			echo "$time ---- 用户操作：执行Clear-Sync-删除空白略缩图的命令" >> $logfile
+			;;
+		27)
+			# 执行Query-Size-查询文件夹大小的命令
+			du -sh $DownloadFolder ; du -sh $SyncFolder
+			echo "$time ---- 用户操作：执行Query-Size-查询文件夹大小的命令" >> $logfile
 			;;
 		0)
 			# 退出脚本

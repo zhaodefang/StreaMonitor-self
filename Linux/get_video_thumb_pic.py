@@ -8,13 +8,14 @@
 
 import sys
 import time
+import requests
+import json
 import os
 import re
 import cv2
 import datetime
 from datetime import timedelta
 import numpy as np
-
 # from PIL import Image, ImageDraw, ImageFont
 
 localpath = os.path.split(os.path.abspath(__file__))[0]                                     # 当前位置
@@ -69,9 +70,9 @@ def thumb_start(path, count_f_l):
             # average_processing_time_formatted = str(timedelta(seconds=average_processing_time))
             estimated_remaining_time_formatted = str(timedelta(seconds=estimated_remaining_time))
 
-            save_log('[' + str(index_count) + '/' + str(count_f_l) + ']：' + '\n[----Error----],' + os.path.join(path,
+            save_log('[' + str(index_count) + '/' + str(count_f_l) + ']：' + '[----Error----],' + os.path.join(path,
                                                                                                                 f) + ', 预估剩余时间:' + estimated_remaining_time_formatted +'秒\n\n')
-            print('[' + str(index_count) + '/' + str(count_f_l) + ']：' + '\n[Error File]',
+            print('[' + str(index_count) + '/' + str(count_f_l) + ']：' + '[Error File]',
                   os.path.join(path, f).encode('utf-8'))
     if len(path_list):                                                                      # 如本级有目录则循环递归调用
         for p in path_list:
@@ -151,8 +152,8 @@ def get_pic(path, file, count_file_list, start):
             up_or_down = round(fps)                                                         # 前进
         while not ret:                                                                      # 截图出错回退or前进指定帧
             if loop_num > (jg * 2):                                                         # 回退or前进超过2个间隔退出
-                save_log('\n[----Error----],' + os.path.join(path, file) + '\n')
-                print('\n[Error File]', os.path.join(path, file))
+                save_log('[----Error----],' + os.path.join(path, file) + '\n')
+                print('[Error File]', os.path.join(path, file))
                 return True
             time_fps += up_or_down
             save_log('[' + str(int(time_fps)) + ']')
@@ -256,6 +257,79 @@ def save_log(mess):
         f.write(mess)
 
 
+class wechatbot:
+    '''
+    企业微信机器人
+    '''
+
+    def __init__(self, corpid, agentid, secret):
+        '''
+        corpid: 企业ID
+        agentid: 机器人的AgentId
+        secret: 机器人的Secret
+        '''
+        self.corpid = corpid
+        self.agentid = agentid
+        self.secret = secret
+
+    def get_access_token(self):
+        get_token_api = f'https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid={corpid}&corpsecret={self.secret}'
+        r = requests.get(get_token_api).json()
+        print(r)
+        if r["errcode"] == 0:
+            self.access_token = r["access_token"]
+
+    def upload_file(self, file_type, file_path, file_name):
+        upload_api = f'https://qyapi.weixin.qq.com/cgi-bin/media/upload?access_token={self.access_token}&type={file_type}'
+        files = {'media': (file_name, open(file_path, "rb"), '', {})}
+
+        # headers = {'Content-Type': 'multipart/form-data'}
+        r = requests.post(upload_api, files=files).json()
+        print(r)
+        if r["errcode"] == 0:
+            return r["media_id"]
+
+    def send(self, msgtype, content):
+        send_message_api = f'https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={self.access_token}'
+
+        message = {
+            "agentid": self.agentid,
+            "touser": "@all",
+            "msgtype": msgtype,
+            msgtype: content
+        }
+
+        headers = {'Content-Type': 'application/json'}
+        r = requests.post(send_message_api, data=json.dumps(message),
+                          headers=headers).json()
+        print(r)
+        return r["errcode"]
+
+
+def wxworks_main(corpid, agentid, secret):
+    '''
+            corpid: 企业ID
+            agentid: 机器人的AgentId
+            secret: 机器人的Secret
+            '''
+    corpid = corpid
+    agentid = agentid
+    secret = secret
+    bot = wechatbot(corpid, agentid, secret)
+    bot.get_access_token()
+    news = {
+        "articles": [
+            {
+                "title": title,
+                "description": syntax,
+                # "url": "https://work.weixin.qq.com/wework_admin/frame#profile/wxPlugin",
+                "picurl": "https://www.prlrr.com/pic/wxwork/python.png"
+            }
+        ]
+    }
+    bot.send("news", news)
+
+
 if __name__ == '__main__':
 
     # 将操作日志消息追加到操作日志文件
@@ -298,14 +372,32 @@ if __name__ == '__main__':
 
     end_time = time.time()  # 记录结束时间
     total_time = end_time - start_time  # 总耗时
+    total_time_formatted = str(timedelta(seconds=total_time))
 
-    print(f"所有视频处理完成，耗时 {total_time} 秒")
+    print(f"所有视频处理完成，耗时 {total_time_formatted} ")
 
     # etime = time.time()
     # print(etime - stime)
     # save_log(str((etime - stime)) + '\n')
     save_log(
-        '\t' + '===========================================' + '     ' + '运行结束' + '===========================================' + '\n')
+        '\t' + '===========================================' + '     ' + '运行结束-耗时 ' + total_time_formatted + '秒 ===========================================' + '\n')
     # 将操作日志消息追加到操作日志文件
     with open(os.path.join(logpath, logLifecycleLog), 'a+', encoding='utf-8') as file:
-        file.write(f"{logtime} ---- 脚本操作：运行结束----get_video_thumb_pic.py 生成略缩图----耗时 {total_time} 秒\n")
+        file.write(f"{logtime} ---- 脚本操作：运行结束----get_video_thumb_pic.py 生成略缩图----耗时 {total_time_formatted} 秒\n")
+
+    title = '视频略缩图已经生成完成！'
+    # 发送企业微信通知
+    try:
+        corpid = 'ww377bffbd7ed5dd33'
+        title = title
+        syntax = "" + '共计耗时' + total_time_formatted + '\n'
+        agentid = 1000002
+        secret = 'uuqh1Ar95GByhyN52S667uxicVpH2KkLc5FvONRgPsw'
+        wxworks_main(corpid, agentid, secret)
+        #print('=' * 20)
+        print('企业微信通知已发送！')
+        #print('=' * 20)
+    except:
+        #print('=' * 20)
+        print('企业微信通知发送失败！')
+        #print('=' * 20)

@@ -1,5 +1,5 @@
 DOWNLOADS_DIR = 'downloads'
-MIN_FREE_DISK_PERCENT = 0.2  # in %
+MIN_FREE_DISK_PERCENT = 0.8  # in %
 DEBUG = False
 
 # You can enter a number to select a specific height.
