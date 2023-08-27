@@ -59,7 +59,7 @@ def thumb_start(path, count_f_l):
                 estimated_remaining_time_formatted = str(timedelta(seconds=estimated_remaining_time))
 
                 save_log(
-                    '[' + str(index_count) + '/' + str(count_f_l) + ']："' + os.path.join(path, f) + '", "跳过, 预估剩余时间:' + estimated_remaining_time_formatted +'秒\n\n')
+                    str(path) + ':[' + str(index_count) + '/' + str(count_f_l) + ']："' + os.path.join(path, f) + '", "跳过, 预估剩余时间:' + estimated_remaining_time_formatted +'秒\n\n')
         except:
             end = time.time()  # 记录当前视频处理完成的时间
             processing_time = end - start  # 当前视频的处理时间
@@ -74,9 +74,9 @@ def thumb_start(path, count_f_l):
             # average_processing_time_formatted = str(timedelta(seconds=average_processing_time))
             estimated_remaining_time_formatted = str(timedelta(seconds=estimated_remaining_time))
 
-            save_log('[' + str(index_count) + '/' + str(count_f_l) + ']：' + '[----Error----],' + os.path.join(path,
+            save_log(str(path) + ':[' + str(index_count) + '/' + str(count_f_l) + ']：' + '[----Error----],' + os.path.join(path,
                                                                                                                 f) + ', 预估剩余时间:' + estimated_remaining_time_formatted +'秒\n\n')
-            print('[' + str(index_count) + '/' + str(count_f_l) + ']：' + '[Error File]',
+            print(str(path) + ':[' + str(index_count) + '/' + str(count_f_l) + ']：' + '[Error File]',
                   os.path.join(path, f).encode('utf-8'))
     if len(path_list):                                                                      # 如本级有目录则循环递归调用
         for p in path_list:
@@ -129,8 +129,8 @@ def get_pic(path, file, count_file_list, start):
     video_duration = get_video_duration(cap)                                                # 获取视频时长
     # print("视频时长:", duration)
     # save_log('"' + os.path.join(path,file) + '",' + str(frames) + ',' + str(fps) + ',' + str(durations) + ',"' + tim + '",' + str(num))
-    save_log('[' + str(index_count) + '/' + str(count_file_list) + ']："' + os.path.join(path, file) + '",' + ', FPS：' + str(
-        fps) + ', 时长：' + str(video_duration) + '"')
+    save_log(str(path) + ':[' + str(index_count) + '/' + str(count_file_list) + ']："' + os.path.join(path, file) + '",' + ' FPS：' + str(
+        fps) + ', 时长：' + str(video_duration) + ', ')
 
     chk = 2
     print(nfile + '\n[', end="")
@@ -156,11 +156,12 @@ def get_pic(path, file, count_file_list, start):
             up_or_down = round(fps)                                                         # 前进
         while not ret:                                                                      # 截图出错回退or前进指定帧
             if loop_num > (jg * 2):                                                         # 回退or前进超过2个间隔退出
-                save_log('[----Error----],' + os.path.join(path, file) + '\n')
+                #save_log('[----Error----],' + os.path.join(path, file) + '\n')
+                save_log('[----Error File----]' + '\n')
                 print('[Error File]', os.path.join(path, file))
                 return True
             time_fps += up_or_down
-            save_log('[' + str(int(time_fps)) + ']')
+            #save_log('[' + str(int(time_fps)) + ']')
             print('.', end="")
             cap.set(cv2.CAP_PROP_POS_FRAMES, time_fps)
             ret, frame = cap.read()
@@ -192,7 +193,7 @@ def get_pic(path, file, count_file_list, start):
     #average_processing_time_formatted = str(timedelta(seconds=average_processing_time))
     estimated_remaining_time_formatted = str(timedelta(seconds=estimated_remaining_time))
 
-    save_log(',Done, 预估剩余时间:' + estimated_remaining_time_formatted +'\n')
+    save_log(', Done, 预估剩余时间:' + estimated_remaining_time_formatted +'\n')
     print('] Done~')
 
 
@@ -409,7 +410,7 @@ if __name__ == '__main__':
     # print(etime - stime)
     # save_log(str((etime - stime)) + '\n')
     save_log(
-        '\t' + '===========================================' + '     ' + '运行结束-耗时 ' + total_time_formatted + '秒 ===========================================' + '\n')
+        '\t' + '===========================================' + '     ' + rootpath + '运行结束-耗时 ' + total_time_formatted + '秒 ===========================================' + '\n')
     # 将操作日志消息追加到操作日志文件
     with open(os.path.join(logpath, logLifecycleLog), 'a+', encoding='utf-8') as file:
         file.write(f"{logtime} ---- 脚本操作：运行结束----get_video_thumb_pic.py 生成略缩图----耗时 {total_time_formatted} 秒\n")
