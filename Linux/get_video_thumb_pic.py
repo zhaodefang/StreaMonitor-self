@@ -398,6 +398,7 @@ if __name__ == '__main__':
     count_file_list = count_video_files(rootpath)  # 视频文件总数
 
     start_time = time.time()  # 记录开始时间
+
     thumb_start(rootpath, count_file_list) # 开始脚本
 
     end_time = time.time()  # 记录结束时间

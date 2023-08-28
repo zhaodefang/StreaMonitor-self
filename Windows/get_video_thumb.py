@@ -207,7 +207,7 @@ def hum_convert(value):
 if __name__ == '__main__':
     if not os.path.exists(logpath):
         os.makedirs(logpath)
-    rootpath = input('请输入文件夹地址：(最后不加“\”)') or '.\downloads'
+    rootpath = input('请输入文件夹地址：(最后不加“\”)') or '.\sync'
     col_def = int(input('你想一行几张图片（横版4,竖版5，默认6）：') or 6)
     width_default = int(input('缩略图宽度（默认3840）：') or 3840)
     rotate = int(input('是否逆时针旋转截图（1:90 2:180 3:270，默认0否）：') or 0)
