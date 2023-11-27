@@ -9,6 +9,18 @@ from threading import Thread
 import requests
 import requests.cookies
 
+import requests.packages.urllib3.util.connection as urllib3_cn
+def allowed_gai_family():
+    """
+     https://github.com/shazow/urllib3/blob/master/urllib3/util/connection.py
+    """
+    family = socket.AF_INET
+    if urllib3_cn.HAS_IPV6:
+        family = socket.AF_INET6 # force ipv6 only if it is available
+    return family
+urllib3_cn.allowed_gai_family = allowed_gai_family
+
+
 import streamonitor.log as log
 from parameters import DOWNLOADS_DIR, DEBUG, WANTED_RESOLUTION, WANTED_RESOLUTION_PREFERENCE
 from streamonitor.downloaders.ffmpeg import getVideoFfmpeg
